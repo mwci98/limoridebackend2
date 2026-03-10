@@ -70,7 +70,11 @@ const createBookingsTable = async () => {
         assigned_driver_name VARCHAR(100),
         otp VARCHAR(10),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        booking_type VARCHAR(20) DEFAULT 'individual',
+        company_name VARCHAR(150),
+        gstin VARCHAR(50),
+        id_card_data TEXT
       )
     `;
 
@@ -84,6 +88,10 @@ const createBookingsTable = async () => {
     await pool.query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS rating INTEGER`);
     await pool.query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS feedback TEXT`);
     await pool.query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS tip_amount DECIMAL(10,2)`);
+    await pool.query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS booking_type VARCHAR(20) DEFAULT 'individual'`);
+    await pool.query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS company_name VARCHAR(150)`);
+    await pool.query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS gstin VARCHAR(50)`);
+    await pool.query(`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS id_card_data TEXT`);
 
     console.log('✅ Bookings table created/verified & columns synced');
   } catch (error) {
@@ -151,7 +159,8 @@ app.post('/api/bookings', async (req, res) => {
       pickupAddress, destination, passengers = 1,
       miles = 0, hours = 0, totalAmount, paymentMethod,
       paymentStatus = 'pending', specialRequests = '',
-      billingAddress = '', stopPoints = [], navigationUrl = ''
+      billingAddress = '', stopPoints = [], navigationUrl = '',
+      bookingType = 'individual', companyName = '', gstin = '', idCardData = ''
     } = req.body;
 
     const query = `
@@ -160,8 +169,9 @@ app.post('/api/bookings', async (req, res) => {
         service_type, vehicle_type, pickup_date, pickup_time,
         pickup_address, destination, passengers, miles, hours,
         total_amount, payment_method, payment_status, special_requests,
-        billing_address, stop_points, navigation_url
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+        billing_address, stop_points, navigation_url,
+        booking_type, company_name, gstin, id_card_data
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
       RETURNING *
     `;
 
@@ -170,7 +180,8 @@ app.post('/api/bookings', async (req, res) => {
       serviceType, vehicleType, pickupDate, pickupTime,
       pickupAddress, destination, passengers, miles, hours,
       totalAmount, paymentMethod, paymentStatus, specialRequests,
-      billingAddress, JSON.stringify(stopPoints), navigationUrl
+      billingAddress, JSON.stringify(stopPoints), navigationUrl,
+      bookingType, companyName, gstin, idCardData
     ];
 
     const result = await pool.query(query, values);
@@ -235,6 +246,10 @@ app.put('/api/bookings/:bookingId', async (req, res) => {
         if (key === 'billingAddress') dbColumn = 'billing_address';
         if (key === 'stopPoints') dbColumn = 'stop_points';
         if (key === 'navigationUrl') dbColumn = 'navigation_url';
+        if (key === 'bookingType') dbColumn = 'booking_type';
+        if (key === 'companyName') dbColumn = 'company_name';
+        if (key === 'gstin') dbColumn = 'gstin';
+        if (key === 'idCardData') dbColumn = 'id_card_data';
         if (key === 'assignedDriverId') dbColumn = 'assigned_driver_id';
         if (key === 'assignedDriverName') dbColumn = 'assigned_driver_name';
         if (key === 'assignedDriverId') dbColumn = 'assigned_driver_id';
