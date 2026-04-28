@@ -281,21 +281,21 @@ const createVehiclesTable = async () => {
           '/fleet/luxury-sedan.jpg',
           '3 passengers',
           '3 large bags',
-          JSON.stringify(['Premium leather', 'Climate control', 'Phone chargers', 'Bottled water']),
+          JSON.stringify(['Leather seating', 'Climate control', 'Professional chauffeur']),
           'Perfect for airport transfers and business meetings with executive comfort.',
           'executive',
           'Premium SUV',
           '/fleet/premium-suv.jpg',
           '6 passengers',
           '6 large bags',
-          JSON.stringify(['Spacious interior', 'Entertainment system', 'WiFi hotspot', 'Refreshments']),
+          JSON.stringify(['LED lighting', 'Premium sound system', 'Complimentary champagne']),
           'Ideal for groups and families with extra space and luxury amenities.',
           'executive',
           'Executive Sprinter',
           '/fleet/executive-sprinter.jpg',
           '14 passengers',
           '14 large bags',
-          JSON.stringify(['Conference seating', 'WiFi & charging', 'Bar service', 'Privacy partition']),
+          JSON.stringify(['Ample luggage space', 'Multiple entertainment screens', 'Refreshment bar']),
           'Perfect for corporate groups, weddings, and special events requiring group transport.',
           'executive'
         ]
@@ -320,7 +320,7 @@ const createVehiclesTable = async () => {
         '/fleet/luxury-sedan.jpg',
         '3 passengers',
         '3 large bags',
-        JSON.stringify(['Premium leather', 'Climate control', 'Phone chargers', 'Bottled water']),
+        JSON.stringify(['Leather seating', 'Climate control', 'Professional chauffeur']),
         'Perfect for airport transfers and business meetings with executive comfort.'
       ]
     );
@@ -343,7 +343,7 @@ const createVehiclesTable = async () => {
         '/fleet/premium-suv.jpg',
         '6 passengers',
         '6 large bags',
-        JSON.stringify(['Spacious interior', 'Entertainment system', 'WiFi hotspot', 'Refreshments']),
+        JSON.stringify(['LED lighting', 'Premium sound system', 'Complimentary champagne']),
         'Ideal for groups and families with extra space and luxury amenities.'
       ]
     );
@@ -366,7 +366,7 @@ const createVehiclesTable = async () => {
         '/fleet/executive-sprinter.jpg',
         '14 passengers',
         '14 large bags',
-        JSON.stringify(['Conference seating', 'WiFi & charging', 'Bar service', 'Privacy partition']),
+        JSON.stringify(['Ample luggage space', 'Multiple entertainment screens', 'Refreshment bar']),
         'Perfect for corporate groups, weddings, and special events requiring group transport.'
       ]
     );
