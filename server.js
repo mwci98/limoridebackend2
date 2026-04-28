@@ -259,6 +259,8 @@ const createVehiclesTable = async () => {
         luggage VARCHAR(100),
         amenities JSONB DEFAULT '[]'::jsonb,
         description TEXT NOT NULL,
+        hourly_rate DECIMAL(10,2),
+        minimum_hours INTEGER,
         category VARCHAR(100) DEFAULT 'executive',
         active BOOLEAN DEFAULT TRUE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -271,11 +273,11 @@ const createVehiclesTable = async () => {
     if (countResult.rows[0].count === 0) {
       await pool.query(
         `
-          INSERT INTO vehicles (name, image, seats, luggage, amenities, description, category, active)
+          INSERT INTO vehicles (name, image, seats, luggage, amenities, description, hourly_rate, minimum_hours, category, active)
           VALUES
-            ($1, $2, $3, $4, $5::jsonb, $6, $7, TRUE),
-            ($8, $9, $10, $11, $12::jsonb, $13, $14, TRUE),
-            ($15, $16, $17, $18, $19::jsonb, $20, $21, TRUE)
+            ($1, $2, $3, $4, $5::jsonb, $6, $7, $8, $9, TRUE),
+            ($10, $11, $12, $13, $14::jsonb, $15, $16, $17, $18, TRUE),
+            ($19, $20, $21, $22, $23::jsonb, $24, $25, $26, $27, TRUE)
         `,
         [
           'Luxury Sedan',
@@ -284,6 +286,8 @@ const createVehiclesTable = async () => {
           '3 large bags',
           JSON.stringify(['Leather seating', 'Climate control', 'Professional chauffeur']),
           'Perfect for airport transfers and business meetings with executive comfort.',
+          125,
+          4,
           'executive',
           'Premium SUV',
           '/fleet/premium-suv.jpg',
@@ -291,6 +295,8 @@ const createVehiclesTable = async () => {
           '6 large bags',
           JSON.stringify(['LED lighting', 'Premium sound system', 'Complimentary champagne']),
           'Ideal for groups and families with extra space and luxury amenities.',
+          125,
+          4,
           'executive',
           'Executive Sprinter',
           '/fleet/executive-sprinter.jpg',
@@ -298,10 +304,15 @@ const createVehiclesTable = async () => {
           '14 large bags',
           JSON.stringify(['Ample luggage space', 'Multiple entertainment screens', 'Refreshment bar']),
           'Perfect for corporate groups, weddings, and special events requiring group transport.',
+          200,
+          6,
           'executive'
         ]
       );
     }
+
+    await pool.query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS hourly_rate DECIMAL(10,2)`);
+    await pool.query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS minimum_hours INTEGER`);
 
     await pool.query(
       `
@@ -311,6 +322,8 @@ const createVehiclesTable = async () => {
             luggage = $4,
             amenities = $5::jsonb,
             description = $6,
+            hourly_rate = $7,
+            minimum_hours = $8,
             category = 'executive',
             active = TRUE,
             updated_at = CURRENT_TIMESTAMP
@@ -322,7 +335,9 @@ const createVehiclesTable = async () => {
         '3 passengers',
         '3 large bags',
         JSON.stringify(['Leather seating', 'Climate control', 'Professional chauffeur']),
-        'Perfect for airport transfers and business meetings with executive comfort.'
+        'Perfect for airport transfers and business meetings with executive comfort.',
+        125,
+        4
       ]
     );
 
@@ -334,6 +349,8 @@ const createVehiclesTable = async () => {
             luggage = $4,
             amenities = $5::jsonb,
             description = $6,
+            hourly_rate = $7,
+            minimum_hours = $8,
             category = 'executive',
             active = TRUE,
             updated_at = CURRENT_TIMESTAMP
@@ -345,7 +362,9 @@ const createVehiclesTable = async () => {
         '6 passengers',
         '6 large bags',
         JSON.stringify(['LED lighting', 'Premium sound system', 'Complimentary champagne']),
-        'Ideal for groups and families with extra space and luxury amenities.'
+        'Ideal for groups and families with extra space and luxury amenities.',
+        125,
+        4
       ]
     );
 
@@ -357,6 +376,8 @@ const createVehiclesTable = async () => {
             luggage = $4,
             amenities = $5::jsonb,
             description = $6,
+            hourly_rate = $7,
+            minimum_hours = $8,
             category = 'executive',
             active = TRUE,
             updated_at = CURRENT_TIMESTAMP
@@ -368,7 +389,9 @@ const createVehiclesTable = async () => {
         '14 passengers',
         '14 large bags',
         JSON.stringify(['Ample luggage space', 'Multiple entertainment screens', 'Refreshment bar']),
-        'Perfect for corporate groups, weddings, and special events requiring group transport.'
+        'Perfect for corporate groups, weddings, and special events requiring group transport.',
+        200,
+        6
       ]
     );
 
@@ -807,17 +830,19 @@ app.post('/api/vehicles', async (req, res) => {
       luggage = '',
       amenities = [],
       description,
+      hourlyRate = null,
+      minimumHours = null,
       category = 'executive',
       active = true
     } = req.body;
 
     const result = await pool.query(
       `
-        INSERT INTO vehicles (name, image, seats, luggage, amenities, description, category, active)
-        VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8)
+        INSERT INTO vehicles (name, image, seats, luggage, amenities, description, hourly_rate, minimum_hours, category, active)
+        VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8, $9, $10)
         RETURNING *
       `,
-      [name, image, seats, luggage, JSON.stringify(amenities), description, category, active]
+      [name, image, seats, luggage, JSON.stringify(amenities), description, hourlyRate, minimumHours, category, active]
     );
 
     res.status(201).json({ success: true, vehicle: result.rows[0] });
@@ -837,6 +862,8 @@ app.put('/api/vehicles/:id', async (req, res) => {
       luggage = '',
       amenities = [],
       description,
+      hourlyRate = null,
+      minimumHours = null,
       category = 'executive',
       active = true
     } = req.body;
@@ -850,13 +877,15 @@ app.put('/api/vehicles/:id', async (req, res) => {
             luggage = $5,
             amenities = $6::jsonb,
             description = $7,
-            category = $8,
-            active = $9,
+            hourly_rate = $8,
+            minimum_hours = $9,
+            category = $10,
+            active = $11,
             updated_at = CURRENT_TIMESTAMP
         WHERE id = $1
         RETURNING *
       `,
-      [id, name, image, seats, luggage, JSON.stringify(amenities), description, category, active]
+      [id, name, image, seats, luggage, JSON.stringify(amenities), description, hourlyRate, minimumHours, category, active]
     );
 
     if (result.rows.length === 0) {
