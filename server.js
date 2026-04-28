@@ -247,6 +247,67 @@ const createDriversTable = async () => {
   }
 };
 
+const createVehiclesTable = async () => {
+  try {
+    const query = `
+      CREATE TABLE IF NOT EXISTS vehicles (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(150) NOT NULL,
+        image TEXT NOT NULL,
+        seats VARCHAR(100),
+        luggage VARCHAR(100),
+        amenities JSONB DEFAULT '[]'::jsonb,
+        description TEXT NOT NULL,
+        category VARCHAR(100) DEFAULT 'executive',
+        active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+    await pool.query(query);
+
+    const countResult = await pool.query('SELECT COUNT(*)::int AS count FROM vehicles');
+    if (countResult.rows[0].count === 0) {
+      await pool.query(
+        `
+          INSERT INTO vehicles (name, image, seats, luggage, amenities, description, category, active)
+          VALUES
+            ($1, $2, $3, $4, $5::jsonb, $6, $7, TRUE),
+            ($8, $9, $10, $11, $12::jsonb, $13, $14, TRUE),
+            ($15, $16, $17, $18, $19::jsonb, $20, $21, TRUE)
+        `,
+        [
+          'Luxury Sedan',
+          'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=80',
+          '3 passengers',
+          '3 large bags',
+          JSON.stringify(['Premium leather', 'Climate control', 'Phone chargers', 'Bottled water']),
+          'Perfect for airport transfers and business meetings with executive comfort.',
+          'executive',
+          'Premium SUV',
+          'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?auto=format&fit=crop&w=1200&q=80',
+          '6 passengers',
+          '6 large bags',
+          JSON.stringify(['Spacious interior', 'Entertainment system', 'WiFi hotspot', 'Refreshments']),
+          'Ideal for groups and families with extra space and luxury amenities.',
+          'executive',
+          'Executive Sprinter',
+          'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=1200&q=80',
+          '14 passengers',
+          '14 large bags',
+          JSON.stringify(['Conference seating', 'WiFi & charging', 'Bar service', 'Privacy partition']),
+          'Perfect for corporate groups, weddings, and special events requiring group transport.',
+          'executive'
+        ]
+      );
+    }
+
+    console.log('✅ Vehicles table created/verified');
+  } catch (error) {
+    console.error('❌ Vehicles table creation error:', error);
+  }
+};
+
 const createPricingSettingsTable = async () => {
   try {
     await pool.query(`
@@ -277,6 +338,7 @@ const createPricingSettingsTable = async () => {
 // Initialize database
 createBookingsTable();
 createDriversTable();
+createVehiclesTable();
 createPricingSettingsTable();
 
 // Health check endpoint
@@ -651,6 +713,106 @@ app.post('/api/auth/send-otp', async (req, res) => {
   } catch (error) {
     console.error('Send OTP error:', error);
     return res.status(500).json({ error: 'Failed to send OTP' });
+  }
+});
+
+// --- VEHICLES ENDPOINTS ---
+
+app.get('/api/vehicles', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM vehicles ORDER BY created_at ASC');
+    res.json({ vehicles: result.rows });
+  } catch (error) {
+    console.error('❌ Get vehicles error:', error);
+    res.status(500).json({ error: 'Failed to fetch vehicles' });
+  }
+});
+
+app.post('/api/vehicles', async (req, res) => {
+  try {
+    const {
+      name,
+      image,
+      seats = '',
+      luggage = '',
+      amenities = [],
+      description,
+      category = 'executive',
+      active = true
+    } = req.body;
+
+    const result = await pool.query(
+      `
+        INSERT INTO vehicles (name, image, seats, luggage, amenities, description, category, active)
+        VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8)
+        RETURNING *
+      `,
+      [name, image, seats, luggage, JSON.stringify(amenities), description, category, active]
+    );
+
+    res.status(201).json({ success: true, vehicle: result.rows[0] });
+  } catch (error) {
+    console.error('❌ Add vehicle error:', error);
+    res.status(500).json({ success: false, error: 'Failed to add vehicle' });
+  }
+});
+
+app.put('/api/vehicles/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      name,
+      image,
+      seats = '',
+      luggage = '',
+      amenities = [],
+      description,
+      category = 'executive',
+      active = true
+    } = req.body;
+
+    const result = await pool.query(
+      `
+        UPDATE vehicles
+        SET name = $2,
+            image = $3,
+            seats = $4,
+            luggage = $5,
+            amenities = $6::jsonb,
+            description = $7,
+            category = $8,
+            active = $9,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = $1
+        RETURNING *
+      `,
+      [id, name, image, seats, luggage, JSON.stringify(amenities), description, category, active]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Vehicle not found' });
+    }
+
+    res.json({ success: true, vehicle: result.rows[0] });
+  } catch (error) {
+    console.error('❌ Update vehicle error:', error);
+    res.status(500).json({ success: false, error: 'Failed to update vehicle' });
+  }
+});
+
+app.delete('/api/vehicles/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('DELETE FROM vehicles WHERE id = $1 RETURNING *', [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Vehicle not found' });
+    }
+
+    res.json({ success: true, message: 'Vehicle deleted successfully' });
+  } catch (error) {
+    console.error('❌ Delete vehicle error:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete vehicle' });
   }
 });
 
