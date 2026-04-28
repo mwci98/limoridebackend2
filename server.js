@@ -278,21 +278,21 @@ const createVehiclesTable = async () => {
         `,
         [
           'Luxury Sedan',
-          'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=80',
+          '/fleet/luxury-sedan.jpg',
           '3 passengers',
           '3 large bags',
           JSON.stringify(['Premium leather', 'Climate control', 'Phone chargers', 'Bottled water']),
           'Perfect for airport transfers and business meetings with executive comfort.',
           'executive',
           'Premium SUV',
-          'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?auto=format&fit=crop&w=1200&q=80',
+          '/fleet/premium-suv.jpg',
           '6 passengers',
           '6 large bags',
           JSON.stringify(['Spacious interior', 'Entertainment system', 'WiFi hotspot', 'Refreshments']),
           'Ideal for groups and families with extra space and luxury amenities.',
           'executive',
           'Executive Sprinter',
-          'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=1200&q=80',
+          '/fleet/executive-sprinter.jpg',
           '14 passengers',
           '14 large bags',
           JSON.stringify(['Conference seating', 'WiFi & charging', 'Bar service', 'Privacy partition']),
@@ -301,6 +301,75 @@ const createVehiclesTable = async () => {
         ]
       );
     }
+
+    await pool.query(
+      `
+        UPDATE vehicles
+        SET image = $2,
+            seats = $3,
+            luggage = $4,
+            amenities = $5::jsonb,
+            description = $6,
+            category = 'executive',
+            active = TRUE,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE name = $1
+      `,
+      [
+        'Luxury Sedan',
+        '/fleet/luxury-sedan.jpg',
+        '3 passengers',
+        '3 large bags',
+        JSON.stringify(['Premium leather', 'Climate control', 'Phone chargers', 'Bottled water']),
+        'Perfect for airport transfers and business meetings with executive comfort.'
+      ]
+    );
+
+    await pool.query(
+      `
+        UPDATE vehicles
+        SET image = $2,
+            seats = $3,
+            luggage = $4,
+            amenities = $5::jsonb,
+            description = $6,
+            category = 'executive',
+            active = TRUE,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE name = $1
+      `,
+      [
+        'Premium SUV',
+        '/fleet/premium-suv.jpg',
+        '6 passengers',
+        '6 large bags',
+        JSON.stringify(['Spacious interior', 'Entertainment system', 'WiFi hotspot', 'Refreshments']),
+        'Ideal for groups and families with extra space and luxury amenities.'
+      ]
+    );
+
+    await pool.query(
+      `
+        UPDATE vehicles
+        SET image = $2,
+            seats = $3,
+            luggage = $4,
+            amenities = $5::jsonb,
+            description = $6,
+            category = 'executive',
+            active = TRUE,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE name = $1
+      `,
+      [
+        'Executive Sprinter',
+        '/fleet/executive-sprinter.jpg',
+        '14 passengers',
+        '14 large bags',
+        JSON.stringify(['Conference seating', 'WiFi & charging', 'Bar service', 'Privacy partition']),
+        'Perfect for corporate groups, weddings, and special events requiring group transport.'
+      ]
+    );
 
     console.log('✅ Vehicles table created/verified');
   } catch (error) {
