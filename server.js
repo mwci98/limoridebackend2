@@ -261,6 +261,8 @@ const createVehiclesTable = async () => {
         description TEXT NOT NULL,
         hourly_rate DECIMAL(10,2),
         minimum_hours INTEGER,
+        point_to_point_rate DECIMAL(10,2),
+        point_to_point_minimum_miles INTEGER,
         category VARCHAR(100) DEFAULT 'executive',
         active BOOLEAN DEFAULT TRUE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -273,11 +275,11 @@ const createVehiclesTable = async () => {
     if (countResult.rows[0].count === 0) {
       await pool.query(
         `
-          INSERT INTO vehicles (name, image, seats, luggage, amenities, description, hourly_rate, minimum_hours, category, active)
+          INSERT INTO vehicles (name, image, seats, luggage, amenities, description, hourly_rate, minimum_hours, point_to_point_rate, point_to_point_minimum_miles, category, active)
           VALUES
-            ($1, $2, $3, $4, $5::jsonb, $6, $7, $8, $9, TRUE),
-            ($10, $11, $12, $13, $14::jsonb, $15, $16, $17, $18, TRUE),
-            ($19, $20, $21, $22, $23::jsonb, $24, $25, $26, $27, TRUE)
+            ($1, $2, $3, $4, $5::jsonb, $6, $7, $8, $9, $10, $11, TRUE),
+            ($12, $13, $14, $15, $16::jsonb, $17, $18, $19, $20, $21, $22, TRUE),
+            ($23, $24, $25, $26, $27::jsonb, $28, $29, $30, $31, $32, $33, TRUE)
         `,
         [
           'Luxury Sedan',
@@ -288,6 +290,8 @@ const createVehiclesTable = async () => {
           'Perfect for airport transfers and business meetings with executive comfort.',
           125,
           4,
+          6.5,
+          16,
           'executive',
           'Premium SUV',
           '/fleet/premium-suv.jpg',
@@ -297,6 +301,8 @@ const createVehiclesTable = async () => {
           'Ideal for groups and families with extra space and luxury amenities.',
           125,
           4,
+          6.5,
+          16,
           'executive',
           'Executive Sprinter',
           '/fleet/executive-sprinter.jpg',
@@ -306,6 +312,8 @@ const createVehiclesTable = async () => {
           'Perfect for corporate groups, weddings, and special events requiring group transport.',
           200,
           6,
+          12,
+          9,
           'executive'
         ]
       );
@@ -313,6 +321,8 @@ const createVehiclesTable = async () => {
 
     await pool.query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS hourly_rate DECIMAL(10,2)`);
     await pool.query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS minimum_hours INTEGER`);
+    await pool.query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS point_to_point_rate DECIMAL(10,2)`);
+    await pool.query(`ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS point_to_point_minimum_miles INTEGER`);
 
     await pool.query(
       `
@@ -324,6 +334,8 @@ const createVehiclesTable = async () => {
             description = $6,
             hourly_rate = $7,
             minimum_hours = $8,
+            point_to_point_rate = $9,
+            point_to_point_minimum_miles = $10,
             category = 'executive',
             active = TRUE,
             updated_at = CURRENT_TIMESTAMP
@@ -337,7 +349,9 @@ const createVehiclesTable = async () => {
         JSON.stringify(['Leather seating', 'Climate control', 'Professional chauffeur']),
         'Perfect for airport transfers and business meetings with executive comfort.',
         125,
-        4
+        4,
+        6.5,
+        16
       ]
     );
 
@@ -351,6 +365,8 @@ const createVehiclesTable = async () => {
             description = $6,
             hourly_rate = $7,
             minimum_hours = $8,
+            point_to_point_rate = $9,
+            point_to_point_minimum_miles = $10,
             category = 'executive',
             active = TRUE,
             updated_at = CURRENT_TIMESTAMP
@@ -364,7 +380,9 @@ const createVehiclesTable = async () => {
         JSON.stringify(['LED lighting', 'Premium sound system', 'Complimentary champagne']),
         'Ideal for groups and families with extra space and luxury amenities.',
         125,
-        4
+        4,
+        6.5,
+        16
       ]
     );
 
@@ -378,6 +396,8 @@ const createVehiclesTable = async () => {
             description = $6,
             hourly_rate = $7,
             minimum_hours = $8,
+            point_to_point_rate = $9,
+            point_to_point_minimum_miles = $10,
             category = 'executive',
             active = TRUE,
             updated_at = CURRENT_TIMESTAMP
@@ -391,7 +411,9 @@ const createVehiclesTable = async () => {
         JSON.stringify(['Ample luggage space', 'Multiple entertainment screens', 'Refreshment bar']),
         'Perfect for corporate groups, weddings, and special events requiring group transport.',
         200,
-        6
+        6,
+        12,
+        9
       ]
     );
 
@@ -832,17 +854,19 @@ app.post('/api/vehicles', async (req, res) => {
       description,
       hourlyRate = null,
       minimumHours = null,
+      pointToPointRate = null,
+      pointToPointMinimumMiles = null,
       category = 'executive',
       active = true
     } = req.body;
 
     const result = await pool.query(
       `
-        INSERT INTO vehicles (name, image, seats, luggage, amenities, description, hourly_rate, minimum_hours, category, active)
-        VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8, $9, $10)
+        INSERT INTO vehicles (name, image, seats, luggage, amenities, description, hourly_rate, minimum_hours, point_to_point_rate, point_to_point_minimum_miles, category, active)
+        VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *
       `,
-      [name, image, seats, luggage, JSON.stringify(amenities), description, hourlyRate, minimumHours, category, active]
+      [name, image, seats, luggage, JSON.stringify(amenities), description, hourlyRate, minimumHours, pointToPointRate, pointToPointMinimumMiles, category, active]
     );
 
     res.status(201).json({ success: true, vehicle: result.rows[0] });
@@ -864,6 +888,8 @@ app.put('/api/vehicles/:id', async (req, res) => {
       description,
       hourlyRate = null,
       minimumHours = null,
+      pointToPointRate = null,
+      pointToPointMinimumMiles = null,
       category = 'executive',
       active = true
     } = req.body;
@@ -879,13 +905,15 @@ app.put('/api/vehicles/:id', async (req, res) => {
             description = $7,
             hourly_rate = $8,
             minimum_hours = $9,
-            category = $10,
-            active = $11,
+            point_to_point_rate = $10,
+            point_to_point_minimum_miles = $11,
+            category = $12,
+            active = $13,
             updated_at = CURRENT_TIMESTAMP
         WHERE id = $1
         RETURNING *
       `,
-      [id, name, image, seats, luggage, JSON.stringify(amenities), description, hourlyRate, minimumHours, category, active]
+      [id, name, image, seats, luggage, JSON.stringify(amenities), description, hourlyRate, minimumHours, pointToPointRate, pointToPointMinimumMiles, category, active]
     );
 
     if (result.rows.length === 0) {
