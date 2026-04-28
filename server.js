@@ -106,9 +106,7 @@ const DEFAULT_PRICING_SETTINGS = {
     rates: {
       sedan: 125,
       suv: 125,
-      sprinter: 200,
-      stretch: 200,
-      party: 250
+      sprinter: 200
     },
     minimumHours: 4,
     includedMiles: 70,
@@ -117,25 +115,19 @@ const DEFAULT_PRICING_SETTINGS = {
     displayMinimumHours: {
       sedan: 4,
       suv: 4,
-      sprinter: 6,
-      stretch: 4,
-      party: 4
+      sprinter: 6
     }
   },
   pointToPoint: {
     rates: {
       sedan: 6.5,
       suv: 6.5,
-      sprinter: 12,
-      stretch: 15,
-      party: 20
+      sprinter: 12
     },
     minimumMiles: {
       sedan: 16,
       suv: 16,
-      sprinter: 9,
-      stretch: 9,
-      party: 16
+      sprinter: 9
     }
   },
   packages: {
